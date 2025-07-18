@@ -1,0 +1,23 @@
+Theme: Power
+
+Bonus challenges:
+1. Single pack: Your game should only use a single asset pack - Y
+2. No text: Create a game that doesn't use any text at all - Y
+3. Mouse only: Your game should be fully controlled using only the mouse - Y
+5. Symmetry: Your game should heavily feature symmetrical elements in visuals, mechanics or both - Y
+
+4. Co-op: Your game should feature co-op gameplay - X
+6. Cross Dimensional: Use 2D sprites in a 3D world - X
+
+Asset pack used:
+"Puzzle Assets"
+
+Game concept: 
+-Goal: break down all Blocks in sight
+-mechanic: ball gets faster over time -> deals more damage to blocks, but is also mopre difficult to keep above ground
+-move slider with mouse (left/right only)
+-base concept: speed = power; power is needed top clear the board
+
+optional ideas:
+-clicking will charge the slider for a short while; bouncing the ball while charged will increase the speed more (or similar)
+-collectable speed/power boosts
