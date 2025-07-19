@@ -18,7 +18,7 @@ pub fn levels_plugin(app: &mut App) {
         // While in this state, run the `countdown` system
         //.add_systems(Update, countdown.run_if(in_state(GameState::Levels)))
         // When exiting the state, despawn everything that was spawned for this screen
-        .add_systems(OnExit(GameState::Start), despawn_screen::<OnLevelsScreen>);
+        .add_systems(OnExit(GameState::Levels), despawn_screen::<OnLevelsScreen>);
 }
 
 /*
@@ -31,7 +31,13 @@ pub fn levels_plugin(app: &mut App) {
  * TODO
  * Read selected Level Ressource and trigger respective level to set up
  */
-fn levels_setup() {}
+fn levels_setup() {
+    // TODO read level resource and load respective level
+}
+
+fn handle_right_mouse_press_event() {
+    // TODO return to level selection
+}
 
 /*
  * ================================================================================================================

@@ -34,10 +34,9 @@ NOTE: GameDesign decisions:
 --Click to launch
 
 GameStates:
-Start - introduces the player to the basic gameplay mechanic
 LevelSelection - this is where the player can select a level by shooting the ball at it
 Play - this is where the player is playing a level
 --> TBD: how to signal which level to load during transition
 
 State-Flow:
-Start <-> LevelSelection <-> Play
+LevelSelection <-> Play

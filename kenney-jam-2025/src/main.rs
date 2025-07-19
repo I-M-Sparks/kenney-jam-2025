@@ -2,7 +2,6 @@ use avian2d::prelude::*;
 use bevy::{log::*, prelude::*};
 mod levels;
 mod selection;
-mod start;
 
 fn main() -> AppExit {
     App::new()
@@ -22,11 +21,7 @@ fn main() -> AppExit {
         // Debug physics
         .add_plugins(PhysicsDebugPlugin::default())
         // Game plugins
-        .add_plugins((
-            start::start_plugin,
-            selection::selection_plugin,
-            levels::levels_plugin,
-        ))
+        .add_plugins((selection::selection_plugin, levels::levels_plugin))
         // ========= SYSTEMS
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, handle_raw_input)
@@ -695,7 +690,6 @@ fn enforce_paddle_borders(transform: &mut Transform) {
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum GameState {
     #[default]
-    Start,
     Selection,
     Levels,
 }
