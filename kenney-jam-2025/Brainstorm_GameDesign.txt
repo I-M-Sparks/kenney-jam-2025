@@ -21,3 +21,23 @@ Game concept:
 optional ideas:
 -clicking will charge the slider for a short while; bouncing the ball while charged will increase the speed more (or similar)
 -collectable speed/power boosts
+
+++++
+
+NOTE: GameDesign decisions: 
+-the Player starts the game with the ball on the paddle. 
+-The paddle can be moved. 
+-The ball will be launched by the player through clicking
+-The ball launches straight up
+-There are two controls for the player:
+--Move paddle
+--Click to launch
+
+GameStates:
+Start - introduces the player to the basic gameplay mechanic
+LevelSelection - this is where the player can select a level by shooting the ball at it
+Play - this is where the player is playing a level
+--> TBD: how to signal which level to load during transition
+
+State-Flow:
+Start <-> LevelSelection <-> Play

@@ -1,0 +1,56 @@
+/*
+ * Plugin to set up the start screen
+ */
+use bevy::prelude::*;
+
+use super::{GameState, despawn_screen};
+
+/*
+ * Plugin defintion
+ */
+pub fn start_plugin(app: &mut App) {
+    // As this plugin is managing the splash screen, it will focus on the state `GameState::Splash`
+    app
+        // When entering the state, spawn everything needed for this screen
+        .add_systems(OnEnter(GameState::Start), start_setup)
+        // While in this state, run the `countdown` system
+        //.add_systems(Update, countdown.run_if(in_state(GameState::Start)))
+        // When exiting the state, despawn everything that was spawned for this screen
+        .add_systems(OnExit(GameState::Start), despawn_screen::<OnStartScreen>);
+}
+
+/*
+ * ================================================================================================================
+ * START - Plugin Systems
+ * ================================================================================================================
+ */
+fn start_setup(
+    // Globals
+    mut commands: Commands,
+) {
+    // spawn Start-Element
+}
+
+/*
+ * ================================================================================================================
+ * END - Plugin Systems
+ * ================================================================================================================
+ */
+
+/*
+ * ================================================================================================================
+ * START - Plugin Components
+ * ================================================================================================================
+ */
+
+/*
+ * Marks an entity as part of the start screen
+ */
+#[derive(Component)]
+struct OnStartScreen;
+
+/*
+ * ================================================================================================================
+ * END - Plugin Components
+ * ================================================================================================================
+ */
