@@ -48,6 +48,7 @@ fn main() -> AppExit {
         .add_event::<LeftMousePressEvent>()
         .add_event::<LeftMouseReleaseEvent>()
         .add_event::<ElementDestroyedEvent>()
+        .add_event::<RightMousePressEvent>()
         // ========= RESOURCE
         .insert_resource(Gravity(Vec2::ZERO))
         // ========= GAME STATE
@@ -165,6 +166,7 @@ fn handle_raw_input(
     mut mouse_move_evw: EventWriter<MouseMoveEvent>,
     mut left_mouse_press_evw: EventWriter<LeftMousePressEvent>,
     mut left_mouse_release_evw: EventWriter<LeftMouseReleaseEvent>,
+    mut right_mouse_press_evw: EventWriter<RightMousePressEvent>,
 ) {
     // Press Left Mouse
     if input.just_pressed(MouseButton::Left) {
@@ -187,6 +189,13 @@ fn handle_raw_input(
         mouse_move_evw.write(MouseMoveEvent {
             position: event.position,
         });
+    }
+
+    //Press Right Mouse
+    if input.just_pressed(MouseButton::Right) {
+        trace!("Right pressed");
+
+        right_mouse_press_evw.write(RightMousePressEvent);
     }
 }
 
@@ -623,6 +632,9 @@ struct LeftMousePressEvent;
 
 #[derive(Event)]
 struct LeftMouseReleaseEvent;
+
+#[derive(Event)]
+struct RightMousePressEvent;
 
 #[derive(Event)]
 struct MouseMoveEvent {

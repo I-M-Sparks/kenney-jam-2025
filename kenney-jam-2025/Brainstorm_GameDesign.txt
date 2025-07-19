@@ -29,9 +29,11 @@ NOTE: GameDesign decisions:
 -The paddle can be moved. 
 -The ball will be launched by the player through clicking
 -The ball launches straight up
--There are two controls for the player:
+-There are three controls for the player:
 --Move paddle
 --Click to launch
+--RightClick to return to level selection
+
 
 GameStates:
 LevelSelection - this is where the player can select a level by shooting the ball at it
