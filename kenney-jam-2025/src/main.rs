@@ -36,6 +36,14 @@ fn main() -> AppExit {
                 handle_left_mouse_press_events,
                 handle_left_mouse_release_events,
                 handle_mouse_move_events,
+                handle_ball_destroyed_event,
+            ),
+        )
+        .add_systems(
+            PostUpdate,
+            (
+                player_ball_physics_sanity_check,
+                handle_collision_player_ball_and_bottom_collider,
             ),
         )
         .add_systems(Last, add_colliders)
@@ -69,13 +77,14 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut default_restitution: ResMut<DefaultRestitution>,
+    mut default_friction: ResMut<DefaultFriction>,
 ) {
     commands.spawn(Camera2d);
 
     commands.spawn(PlayerBundle { marker: Player {} });
 
     commands.spawn(PlayerPaddleBundle {
-        marker: PlayerPaddle { paddle_speed: 1.0 },
+        marker: PlayerPaddle,
         add_collider: AddCollider {
             collider_scale: 1.0,
             collider_type: ColliderType::Capsule,
@@ -137,10 +146,17 @@ fn setup(
         rigid_body: RigidBody::Static,
     });
 
-    // TODO bottom border
+    commands.spawn(BottomColliderBundle {
+        marker: BottomCollider,
+        collider: Collider::rectangle(1280.0, 60.0),
+        transform: Transform::from_xyz(0.0, -380.0, 0.0),
+        rigid_body: RigidBody::Static,
+    });
 
     default_restitution.coefficient = 1.075;
     default_restitution.combine_rule = CoefficientCombine::Max;
+
+    default_friction.dynamic_coefficient = 0.0;
 }
 
 /*
@@ -173,9 +189,9 @@ fn handle_raw_input(
     for event in cursor_evr.read() {
         trace!("Mouse moved");
 
-        if let Some(delta) = event.delta {
-            mouse_move_evw.write(MouseMoveEvent { delta: delta });
-        }
+        mouse_move_evw.write(MouseMoveEvent {
+            position: event.position,
+        });
     }
 }
 
@@ -185,20 +201,36 @@ fn handle_raw_input(
 */
 fn handle_mouse_move_events(
     //Singles
-    player_paddle: Single<(&mut Transform, &PlayerPaddle)>,
+    player_paddle: Single<&mut Transform, With<PlayerPaddle>>,
     player_ball: Option<Single<&mut Transform, (With<PlayerBallInHold>, Without<PlayerPaddle>)>>,
     // Events
     mut mouse_move_evr: EventReader<MouseMoveEvent>,
+    // Queries
+    camera: Query<(&Camera, &GlobalTransform)>,
 ) {
-    let (mut paddle_transform, player_paddle) = player_paddle.into_inner();
+    let mut paddle_transform = player_paddle.into_inner();
 
     for event in mouse_move_evr.read() {
         trace!("Move Event");
 
-        paddle_transform.translation.x =
-            paddle_transform.translation.x + (event.delta.x * player_paddle.paddle_speed);
+        if camera.single().is_ok() {
+            if let Some((camera, camera_transform)) = camera.single().ok() {
+                let cursor_position_in_world_coord = camera.viewport_to_world_2d(
+                    camera_transform,
+                    Vec2::new(event.position.x, event.position.y),
+                );
 
-        enforce_paddle_borders(&mut paddle_transform);
+                if cursor_position_in_world_coord.is_ok() {
+                    if let Some(cursor_position_in_world_coord) =
+                        cursor_position_in_world_coord.ok()
+                    {
+                        paddle_transform.translation.x = cursor_position_in_world_coord.x;
+                        enforce_paddle_borders(&mut paddle_transform);
+                        trace!("paddle translation.x: {}", paddle_transform.translation.x)
+                    }
+                }
+            }
+        }
     }
 
     if let Some(player_ball) = player_ball {
@@ -239,10 +271,11 @@ fn handle_left_mouse_press_events(
                         collider_type: ColliderType::Circle,
                     },
                     sprite: Sprite::from_image(asset_server.load("ballGrey.png")),
-                    transform: Transform::from_xyz(paddle_transform.translation.x, -290.0, 0.0),
+                    transform: Transform::from_xyz(paddle_transform.translation.x, -300.0, 0.0),
                     rigid_body: RigidBody::Dynamic,
                 })
                 .insert(PlayerBallInHold);
+            debug!("PlayerBall spawned");
         }
 
         break; // if there is more than one event in queue: ignore it
@@ -264,7 +297,6 @@ fn handle_left_mouse_release_events(
 
     // TODO handle mouse release
     for event in left_mouse_release_evr.read() {
-        trace!("Mouse press");
         sprite.image = asset_server.load("paddleBlu.png");
 
         commands
@@ -283,10 +315,32 @@ fn handle_left_mouse_release_events(
 
 fn handle_ball_destroyed_event(
     //Singles
-    mut player_ball: Single<Entity, With<PlayerBall>>,
+    player_ball: Single<Entity, With<PlayerBall>>,
+    // Globals
+    mut commands: Commands,
     //Events
     mut ball_destroyed_evr: EventReader<BallDestroyedEvent>,
 ) {
+    let player_ball = player_ball.into_inner();
+    for _event in ball_destroyed_evr.read() {
+        commands.entity(player_ball).despawn();
+        break;
+    }
+}
+
+fn player_ball_physics_sanity_check(
+    // Single
+    player_ball: Single<&Transform, With<PlayerBall>>,
+    // Globals
+    mut ball_destroyed_evw: EventWriter<BallDestroyedEvent>,
+) {
+    let player_ball = player_ball.into_inner();
+
+    if f32::abs(player_ball.translation.x) > 1500.0 || f32::abs(player_ball.translation.y) > 1000.0
+    {
+        ball_destroyed_evw.write(BallDestroyedEvent);
+        debug!("Ball broke the physics; destroyed event sent");
+    }
 }
 
 fn add_colliders(
@@ -368,6 +422,31 @@ fn add_colliders(
     }
 }
 
+fn handle_collision_player_ball_and_bottom_collider(
+    // Singles
+    player_ball: Single<Entity, With<PlayerBall>>,
+    bottom_collider: Single<Entity, With<BottomCollider>>,
+    // Collisions
+    collisions: Collisions,
+    // Events
+    mut ball_destroyed_evw: EventWriter<BallDestroyedEvent>,
+) {
+    let player_ball = player_ball.into_inner();
+    let bottom_collider = bottom_collider.into_inner();
+
+    for contact_pair in collisions.iter() {
+        // if one of the colliders is the player ball and one of them is the bottom collider
+        if (contact_pair.collider1.eq(&player_ball) || contact_pair.collider2.eq(&player_ball))
+            && (contact_pair.collider1.eq(&bottom_collider)
+                || contact_pair.collider2.eq(&bottom_collider))
+        {
+            ball_destroyed_evw.write(BallDestroyedEvent);
+            debug!("Ball fell through; sending destruction event");
+            break;
+        }
+    }
+}
+
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
@@ -394,6 +473,12 @@ fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands
 struct Player;
 
 /*
+ * Marks the player controlled Paddle entity; should only exist once
+ */
+#[derive(Component)]
+struct PlayerPaddle;
+
+/*
  * Marks a destructible Element entity in a scene
  */
 #[derive(Component)]
@@ -415,7 +500,7 @@ struct PlayerBallInHold;
  * Markes the bottom blocker used to determine when the ball has been "destroyed" (fell through)
  */
 #[derive(Component)]
-struct BottomBlocker;
+struct BottomCollider;
 
 /*
  * ================================================================================================================
@@ -433,14 +518,6 @@ struct BottomBlocker;
 struct AddCollider {
     collider_scale: f32,
     collider_type: ColliderType,
-}
-
-/*
- * Marks the player controlled Paddle entity; should only exist once
- */
-#[derive(Component)]
-struct PlayerPaddle {
-    paddle_speed: f32, // TBD unit? pixels per second maybe?
 }
 
 /*
@@ -504,9 +581,9 @@ struct PermanentElementBundle {
 }
 
 #[derive(Bundle)]
-struct BottomBlockerBundle {
-    marker: BottomBlocker,
-    add_collider: Collider,
+struct BottomColliderBundle {
+    marker: BottomCollider,
+    collider: Collider,
     transform: Transform,
     rigid_body: RigidBody,
 }
@@ -554,7 +631,7 @@ struct LeftMouseReleaseEvent;
 
 #[derive(Event)]
 struct MouseMoveEvent {
-    delta: Vec2,
+    position: Vec2,
 }
 
 #[derive(Event)]
@@ -594,7 +671,7 @@ fn calculate_sprite_size(images: &Res<Assets<Image>>, sprite: &Sprite) -> Vec2 {
 }
 
 fn enforce_paddle_borders(transform: &mut Transform) {
-    const PADDLE_MAX_ABS_TRANSLATION: f32 = 539.0;
+    const PADDLE_MAX_ABS_TRANSLATION: f32 = 535.0;
 
     if f32::abs(transform.translation.x) > PADDLE_MAX_ABS_TRANSLATION {
         transform.translation.x = PADDLE_MAX_ABS_TRANSLATION
