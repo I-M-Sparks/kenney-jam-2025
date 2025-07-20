@@ -1,9 +1,11 @@
 /*
  * Plugin to handle level selection
  */
+use super::{AddCollider, ColliderType, GameState, Player, despawn_screen};
+use avian2d::prelude::*;
 use bevy::prelude::*;
 
-use super::{GameState, despawn_screen};
+use crate::levels::SelectedLevel;
 
 /*
  * Plugin defintion
@@ -28,8 +30,27 @@ pub fn selection_plugin(app: &mut App) {
  * ================================================================================================================
  */
 
-fn selection_setup() {
-    // TODO set up selection blocks
+fn selection_setup(
+    // Singles
+    player: Option<Single<&Player>>,
+    //Globals
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    trace!("Setting up Selection screen");
+
+    if let Some(player) = player {
+        let player = player.into_inner();
+        spawn_selection_block(&player, SelectedLevel::Level1, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level2, &mut commands, &asset_server);
+    } else {
+        trace!("No player-entity found, using mock player for setup");
+        let player = Player {
+            highest_selectable_level: SelectedLevel::Level1,
+        };
+        spawn_selection_block(&player, SelectedLevel::Level1, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level2, &mut commands, &asset_server);
+    }
 }
 
 fn handle_collision_player_ball_and_selection_block() {
@@ -47,6 +68,98 @@ fn handle_collision_player_ball_and_selection_block() {
 
 /*
  * ================================================================================================================
+ * START - Plugin functions
+ * ================================================================================================================
+ */
+fn spawn_selection_block(
+    // Parameters
+    player: &Player,
+    selected_level: SelectedLevel,
+    //Globals
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+) {
+    let mut outline_sprite_selectable = Sprite::from_image(asset_server.load("selectorA.png"));
+    outline_sprite_selectable.custom_size = Some(Vec2::new(50.0, 50.0));
+    let mut outline_sprite_not_selectable = Sprite::from_image(asset_server.load("selectorB.png"));
+    outline_sprite_not_selectable.custom_size = Some(Vec2::new(50.0, 50.0));
+
+    let spawn_block = |selected_level,
+                       transform: Transform,
+                       asset_path,
+                       outline_sprite: Sprite,
+                       commands: &mut Commands,
+                       asset_server: &Res<AssetServer>| {
+        commands.spawn(LevelSelectorBlockBundle {
+            marker: LevelSelectorBlock {
+                selected_level: selected_level,
+            },
+            screen_marker: OnSelectionScreen,
+            add_collider: AddCollider {
+                collider_scale: 1.0,
+                collider_type: ColliderType::RegularPolygon,
+            },
+            sprite: Sprite::from_image(asset_server.load(asset_path)),
+            transform: transform.clone(),
+            rigid_body: RigidBody::Static,
+        });
+
+        commands.spawn(LevelSelectorOutlineBundle {
+            marker: LevelSelectorOutline,
+            screen_marker: OnSelectionScreen,
+            add_collider: AddCollider {
+                collider_scale: 0.0,
+                collider_type: ColliderType::None,
+            },
+            sprite: outline_sprite.clone(),
+            transform: transform.clone(),
+            rigid_body: RigidBody::Static,
+        });
+    };
+
+    match selected_level {
+        SelectedLevel::Level1 => {
+            let level_1_selector_transform = Transform::from_xyz(-500.0, 100.0, 0.0);
+            let asset_path = "element_grey_polygon_glossy.png";
+
+            spawn_block(
+                selected_level,
+                level_1_selector_transform,
+                asset_path,
+                outline_sprite_selectable.clone(),
+                commands,
+                asset_server,
+            );
+        }
+
+        SelectedLevel::Level2 => {
+            let level_2_selector_transform = Transform::from_xyz(-350.0, 100.0, 0.0);
+            let asset_path = "element_blue_polygon_glossy.png";
+
+            spawn_block(
+                selected_level,
+                level_2_selector_transform,
+                asset_path,
+                if player.highest_selectable_level >= SelectedLevel::Level2 {
+                    outline_sprite_selectable.clone()
+                } else {
+                    outline_sprite_not_selectable.clone()
+                }
+                .clone(),
+                commands,
+                asset_server,
+            );
+        }
+    }
+}
+/*
+ * ================================================================================================================
+ * END - Plugin functions
+ * ================================================================================================================
+ */
+
+/*
+ * ================================================================================================================
  * START - Plugin Components
  * ================================================================================================================
  */
@@ -58,7 +171,57 @@ fn handle_collision_player_ball_and_selection_block() {
 struct OnSelectionScreen;
 
 /*
+ * Markes the **** TODO
+ */
+#[derive(Component)]
+struct LevelSelectorOutline;
+
+/*
+ * Markes the **** TODO
+ */
+#[derive(Component)]
+struct SelectorHighlighter;
+
+/*
+ * Markes the **** TODO
+ */
+#[derive(Component)]
+struct LevelSelectorBlock {
+    selected_level: SelectedLevel,
+}
+
+/*
  * ================================================================================================================
  * END - Plugin Components
+ * ================================================================================================================
+ */
+
+/*
+ * ================================================================================================================
+ * START - Plugin Bundles
+ * ================================================================================================================
+ */
+#[derive(Bundle)]
+struct LevelSelectorOutlineBundle {
+    marker: LevelSelectorOutline,
+    screen_marker: OnSelectionScreen,
+    add_collider: AddCollider,
+    sprite: Sprite,
+    transform: Transform,
+    rigid_body: RigidBody,
+}
+
+#[derive(Bundle)]
+struct LevelSelectorBlockBundle {
+    marker: LevelSelectorBlock,
+    screen_marker: OnSelectionScreen,
+    add_collider: AddCollider,
+    sprite: Sprite,
+    transform: Transform,
+    rigid_body: RigidBody,
+}
+/*
+ * ================================================================================================================
+ * END - Plugin Bundles
  * ================================================================================================================
  */

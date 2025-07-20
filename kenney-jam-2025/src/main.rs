@@ -1,6 +1,9 @@
 use avian2d::prelude::*;
 use bevy::{log::*, prelude::*};
+
 mod levels;
+use crate::levels::SelectedLevel;
+
 mod selection;
 
 fn main() -> AppExit {
@@ -25,6 +28,7 @@ fn main() -> AppExit {
         // ========= SYSTEMS
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, handle_raw_input)
+        .add_systems(PreUpdate, player_ball_speed_based_power)
         .add_systems(
             Update,
             (
@@ -77,7 +81,11 @@ fn setup(
 ) {
     commands.spawn(Camera2d);
 
-    commands.spawn(PlayerBundle { marker: Player {} });
+    commands.spawn(PlayerBundle {
+        marker: Player {
+            highest_selectable_level: SelectedLevel::Level1,
+        },
+    });
 
     commands.spawn(PlayerPaddleBundle {
         marker: PlayerPaddle,
@@ -145,7 +153,7 @@ fn setup(
     commands.spawn(BottomColliderBundle {
         marker: BottomCollider,
         collider: Collider::rectangle(1280.0, 60.0),
-        transform: Transform::from_xyz(0.0, -380.0, 0.0),
+        transform: Transform::from_xyz(0.0, -385.0, 0.0),
         rigid_body: RigidBody::Static,
     });
 
@@ -257,8 +265,8 @@ fn handle_left_mouse_press_events(
     player_balls: Query<Entity, (With<PlayerBall>, Without<PlayerPaddle>)>,
 ) {
     let (paddle_transform, mut sprite) = player_paddle.into_inner();
-    // TODO handle mouse press
-    for event in left_mouse_press_evr.read() {
+
+    for _event in left_mouse_press_evr.read() {
         trace!("Mouse press");
 
         // TODO check that mouse press is on the paddle (inside paddle sprite)
@@ -289,7 +297,7 @@ fn handle_left_mouse_press_events(
 fn handle_left_mouse_release_events(
     //Singles
     player_paddle: Single<&mut Sprite, With<PlayerPaddle>>,
-    mut player_ball: Single<(Entity, &PlayerBall), With<PlayerBallInHold>>,
+    player_ball: Single<(Entity, &PlayerBall), With<PlayerBallInHold>>,
     //Globals
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -299,8 +307,7 @@ fn handle_left_mouse_release_events(
     let mut sprite = player_paddle.into_inner();
     let (player_ball_entity, player_ball) = player_ball.into_inner();
 
-    // TODO handle mouse release
-    for event in left_mouse_release_evr.read() {
+    for _event in left_mouse_release_evr.read() {
         sprite.image = asset_server.load("paddleBlu.png");
 
         commands
@@ -347,6 +354,12 @@ fn player_ball_physics_sanity_check(
     }
 }
 
+fn player_ball_speed_based_power(
+    // Single
+    player_ball: Single<&mut Sprite, With<PlayerBall>>,
+) { // TODO
+}
+
 fn add_colliders(
     // Globals
     mut commands: Commands,
@@ -362,6 +375,8 @@ fn add_colliders(
             commands.entity(entity).remove::<AddCollider>();
 
             match add_collider.collider_type {
+                ColliderType::None => {}
+
                 ColliderType::Circle => {
                     // add circle collider
                     let collider_size = add_collider.collider_scale
@@ -471,12 +486,6 @@ fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands
  */
 
 /*
- * Marks the player entity; should only exist once
- */
-#[derive(Component)]
-struct Player;
-
-/*
  * Marks the player controlled Paddle entity; should only exist once
  */
 #[derive(Component)]
@@ -517,6 +526,14 @@ struct BottomCollider;
  * START - Components - Structs
  * ================================================================================================================
  */
+
+/*
+ * Marks the player entity; should only exist once
+ */
+#[derive(Component)]
+struct Player {
+    highest_selectable_level: SelectedLevel,
+}
 
 #[derive(Component)]
 struct AddCollider {
@@ -607,7 +624,10 @@ struct BottomColliderBundle {
 /*
  * Used to define how the AddCollider Component will be interpreted
  */
+#[derive(Default)]
 pub enum ColliderType {
+    #[default]
+    None,
     Circle,
     Rectangle,
     Capsule,
@@ -663,7 +683,7 @@ struct ElementDestroyedEvent;
 Calculates sprite size and returns it
  */
 fn calculate_sprite_size(images: &Res<Assets<Image>>, sprite: &Sprite) -> Vec2 {
-    let mut sprite_size = if let Some(custom_size) = sprite.custom_size {
+    let sprite_size = if let Some(custom_size) = sprite.custom_size {
         trace!("Using custom sprite size {}", custom_size);
         custom_size
     } else if let Some(image) = images.get(sprite.image.id()) {
@@ -709,5 +729,17 @@ enum GameState {
 /*
  * ================================================================================================================
  * END - States
+ * ================================================================================================================
+ */
+
+/*
+ * ================================================================================================================
+ * START - Resource
+ * ================================================================================================================
+ */
+
+/*
+ * ================================================================================================================
+ * END - Resource
  * ================================================================================================================
  */

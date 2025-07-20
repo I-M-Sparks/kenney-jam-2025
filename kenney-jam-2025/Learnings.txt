@@ -1,0 +1,26 @@
+log level:
+-kenney-jam-6 is interpreted as kenney_jam_6 in the filter
+-dynamic vs compile time log levels
+
++++
+
+spreading code across add_plugins
+
++++
+
+using code from other (internal) mods 
+
++++
+
+using GameStates
+
++++
+
+queries in setup functions called when a GameState is entity_replaced_rune
+
++++
+
+Single-Query in startup function of GameState setup causes it not to load, because no entities exist at that time -> Single query MUST fail
+--> solution: make the Single-query optional
+
++++

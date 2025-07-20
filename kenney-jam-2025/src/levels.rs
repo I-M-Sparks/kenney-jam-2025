@@ -70,8 +70,8 @@ struct OnLevelsScreen;
  */
 
 // State used for the current menu screen
-#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
-enum SelectedLevel {
+#[derive(Clone, Copy, Default, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, States)]
+pub enum SelectedLevel {
     #[default]
     Level1,
     Level2,
