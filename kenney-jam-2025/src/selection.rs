@@ -1,7 +1,9 @@
 /*
  * Plugin to handle level selection
  */
-use super::{AddCollider, ColliderType, GameState, Player, despawn_screen};
+use super::{
+    AddCollider, BallDestroyedEvent, ColliderType, GameState, Player, PlayerBall, despawn_screen,
+};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
@@ -15,13 +17,17 @@ pub fn selection_plugin(app: &mut App) {
     app
         // When entering the state, spawn everything needed for this screen
         .add_systems(OnEnter(GameState::Selection), selection_setup)
-        // While in this state, run the `countdown` system
-        //.add_systems(Update, countdown.run_if(in_state(GameState::Selection)))
+        // While in this state, handle level selection (by handling collisions between player ball and level selector)
+        .add_systems(
+            Update,
+            handle_collision_player_ball_and_selection_block.run_if(in_state(GameState::Selection)),
+        )
         // When exiting the state, despawn everything that was spawned for this screen
         .add_systems(
             OnExit(GameState::Selection),
             despawn_screen::<OnSelectionScreen>,
-        );
+        )
+        .add_event::<LevelSelectedEvent>();
 }
 
 /*
@@ -53,11 +59,65 @@ fn selection_setup(
     }
 }
 
-fn handle_collision_player_ball_and_selection_block() {
+fn handle_collision_player_ball_and_selection_block(
+    // Singles
+    player_ball: Single<Entity, With<PlayerBall>>,
+    // Globals
+    mut game_state: ResMut<NextState<GameState>>,
+    // Collisions
+    collisions: Collisions,
+    //Queries
+    level_selector_blocks: Query<(Entity, &LevelSelectorBlock), Without<PlayerBall>>,
+    level_selector_outlines: Query<&LevelSelectorOutline, Without<PlayerBall>>,
+    // Events
+    mut ball_destroyed_evw: EventWriter<BallDestroyedEvent>,
+    mut level_selected_evw: EventWriter<LevelSelectedEvent>,
+) {
     // TODO
-    // TODO detect collision
-    // TODO read data from selection block and write to... Resource?
-    // TODO trigger GameState change
+    let player_ball = player_ball.into_inner();
+
+    for contact_pair in collisions.iter() {
+        // if a collision between the player ball and a level selector occurred
+        if (contact_pair.collider1.eq(&player_ball) || contact_pair.collider2.eq(&player_ball))
+            && (level_selector_blocks.contains(contact_pair.collider1)
+                || level_selector_blocks.contains(contact_pair.collider2))
+        {
+            let level_selector_block_entity = if contact_pair.collider1.eq(&player_ball) {
+                contact_pair.collider2
+            } else {
+                contact_pair.collider1
+            };
+
+            let level_selector_block = level_selector_blocks
+                .get(level_selector_block_entity)
+                .ok()
+                .unwrap()
+                .1;
+
+            ball_destroyed_evw.write(BallDestroyedEvent);
+            level_selected_evw.write(LevelSelectedEvent {
+                selected_level: level_selector_block.selected_level,
+            });
+            game_state.set(GameState::Levels);
+            debug!("Selected {:?}", level_selector_block.selected_level);
+            break;
+        }
+    }
+
+    for contact_pair in collisions.iter() {
+        // if a collision between the player ball and a level selector occurred
+        if (contact_pair.collider1.eq(&player_ball) || contact_pair.collider2.eq(&player_ball))
+            && (level_selector_outlines.contains(contact_pair.collider1)
+                || level_selector_outlines.contains(contact_pair.collider2))
+        {
+            ball_destroyed_evw.write(BallDestroyedEvent);
+            debug!("Level could not be selected; not yet unlocked");
+            break;
+        }
+    }
+
+    // TODO read slection data from selection block and write to... Resource? how to determine which level should now run? can I just use a second GameState?
+    // TODO trigger GameState change to play
 }
 
 /*
@@ -232,5 +292,20 @@ struct LevelSelectorBlockBundle {
 /*
  * ================================================================================================================
  * END - Plugin Bundles
+ * ================================================================================================================
+ */
+
+/*
+ * ================================================================================================================
+ * Start - Plugin Events
+ * ================================================================================================================
+ */
+#[derive(Event)]
+pub struct LevelSelectedEvent {
+    pub selected_level: SelectedLevel,
+}
+/*
+ * ================================================================================================================
+ * END - Plugin Events
  * ================================================================================================================
  */

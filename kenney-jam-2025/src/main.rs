@@ -6,6 +6,8 @@ use crate::levels::SelectedLevel;
 
 mod selection;
 
+mod level_elements;
+
 fn main() -> AppExit {
     App::new()
         // ========= PLUGINS
@@ -276,7 +278,7 @@ fn handle_left_mouse_press_events(
             commands
                 .spawn(PlayerBallBundle {
                     marker: PlayerBall {
-                        initial_impulse: Vec2::new(0.0, 200000.0),
+                        initial_impulse: Vec2::new(0.0, 150000.0),
                     },
                     add_collider: AddCollider {
                         collider_scale: 1.0,
@@ -285,6 +287,7 @@ fn handle_left_mouse_press_events(
                     sprite: Sprite::from_image(asset_server.load("ballGrey.png")),
                     transform: Transform::from_xyz(paddle_transform.translation.x, -300.0, 0.0),
                     rigid_body: RigidBody::Dynamic,
+                    max_linear_speed: MaxLinearSpeed(3000.0),
                 })
                 .insert(PlayerBallInHold);
             debug!("PlayerBall spawned");
@@ -356,8 +359,11 @@ fn player_ball_physics_sanity_check(
 
 fn player_ball_speed_based_power(
     // Single
-    player_ball: Single<&mut Sprite, With<PlayerBall>>,
-) { // TODO
+    player_ball: Single<(&mut Sprite, &LinearVelocity), With<PlayerBall>>,
+) {
+    // TODO
+    let (ball_sprite, ball_velocity) = player_ball.into_inner();
+    trace!("PlayerBall velocity {:?}", ball_velocity);
 }
 
 fn add_colliders(
@@ -444,6 +450,26 @@ fn add_colliders(
                         collider_size, border_radius
                     );
                 }
+
+                ColliderType::Diamond => {
+                    let collider_size =
+                        add_collider.collider_scale * calculate_sprite_size(&images, &sprite);
+
+                    let collider_hull_points = Vec::from([
+                        Vec2::new(0.0, collider_size.y * 0.5),
+                        Vec2::new(collider_size.x * 0.5, 0.0),
+                        Vec2::new(0.0, collider_size.y * -0.5),
+                        Vec2::new(collider_size.x * -0.5, 0.0),
+                    ]);
+
+                    if let Some(diamond_collider) = Collider::convex_hull(collider_hull_points) {
+                        commands.entity(entity).insert(diamond_collider);
+                    } else {
+                        debug!("Creating diamond collider failed!");
+                    }
+
+                    // TODO actually create the collider
+                }
             }
         } else {
             trace!("Asset not yet loaded");
@@ -500,12 +526,6 @@ fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands
  */
 #[derive(Component)]
 struct PlayerPaddle;
-
-/*
- * Marks a destructible Element entity in a scene
- */
-#[derive(Component)]
-struct DestructibleElement;
 
 /*
  * Marks a permanent (non-destructible) Element entity in a scene
@@ -591,15 +611,7 @@ struct PlayerBallBundle {
     sprite: Sprite,
     transform: Transform,
     rigid_body: RigidBody,
-}
-
-#[derive(Bundle)]
-struct DestructribleElementBundle {
-    marker: DestructibleElement,
-    add_collider: AddCollider,
-    sprite: Sprite,
-    transform: Transform,
-    rigid_body: RigidBody,
+    max_linear_speed: MaxLinearSpeed,
 }
 
 #[derive(Bundle)]
@@ -643,6 +655,7 @@ pub enum ColliderType {
     Capsule,
     RegularPolygon,
     RoundedRectangle,
+    Diamond,
 }
 
 /*
