@@ -401,7 +401,6 @@ fn add_colliders(
                 }
 
                 ColliderType::Capsule => {
-                    // TODO
                     let collider_size =
                         add_collider.collider_scale * calculate_sprite_size(&images, &sprite);
 
@@ -413,8 +412,19 @@ fn add_colliders(
                 }
 
                 ColliderType::RegularPolygon => {
-                    // TODO
-                    // Note: used for the pentagon
+                    let collider_size =
+                        add_collider.collider_scale * calculate_sprite_size(&images, &sprite);
+
+                    // currently only used for a pentagon
+                    commands
+                        .entity(entity)
+                        .insert(Collider::regular_polygon(collider_size.y * 0.55, 5));
+
+                    debug!(
+                        "RegularPolygon Collider added with circumradius {} and side count {}",
+                        collider_size.y * 0.5,
+                        5
+                    );
                 }
 
                 ColliderType::RoundedRectangle => {

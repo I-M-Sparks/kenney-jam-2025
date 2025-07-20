@@ -80,14 +80,15 @@ fn spawn_selection_block(
     asset_server: &Res<AssetServer>,
 ) {
     let mut outline_sprite_selectable = Sprite::from_image(asset_server.load("selectorA.png"));
-    outline_sprite_selectable.custom_size = Some(Vec2::new(50.0, 50.0));
+    outline_sprite_selectable.custom_size = Some(Vec2::new(55.0, 55.0));
     let mut outline_sprite_not_selectable = Sprite::from_image(asset_server.load("selectorB.png"));
-    outline_sprite_not_selectable.custom_size = Some(Vec2::new(50.0, 50.0));
+    outline_sprite_not_selectable.custom_size = Some(Vec2::new(55.0, 55.0));
 
     let spawn_block = |selected_level,
                        transform: Transform,
                        asset_path,
                        outline_sprite: Sprite,
+                       outline_collider_type: ColliderType,
                        commands: &mut Commands,
                        asset_server: &Res<AssetServer>| {
         commands.spawn(LevelSelectorBlockBundle {
@@ -108,8 +109,8 @@ fn spawn_selection_block(
             marker: LevelSelectorOutline,
             screen_marker: OnSelectionScreen,
             add_collider: AddCollider {
-                collider_scale: 0.0,
-                collider_type: ColliderType::None,
+                collider_scale: 1.0,
+                collider_type: outline_collider_type,
             },
             sprite: outline_sprite.clone(),
             transform: transform.clone(),
@@ -119,7 +120,7 @@ fn spawn_selection_block(
 
     match selected_level {
         SelectedLevel::Level1 => {
-            let level_1_selector_transform = Transform::from_xyz(-500.0, 100.0, 0.0);
+            let level_1_selector_transform = Transform::from_xyz(-450.0, 100.0, 0.0);
             let asset_path = "element_grey_polygon_glossy.png";
 
             spawn_block(
@@ -127,25 +128,33 @@ fn spawn_selection_block(
                 level_1_selector_transform,
                 asset_path,
                 outline_sprite_selectable.clone(),
+                ColliderType::None,
                 commands,
                 asset_server,
             );
         }
 
         SelectedLevel::Level2 => {
-            let level_2_selector_transform = Transform::from_xyz(-350.0, 100.0, 0.0);
+            let level_2_selector_transform = Transform::from_xyz(-300.0, 100.0, 0.0);
             let asset_path = "element_blue_polygon_glossy.png";
+            let outline_sprite = if player.highest_selectable_level >= SelectedLevel::Level2 {
+                outline_sprite_selectable.clone()
+            } else {
+                outline_sprite_not_selectable.clone()
+            };
+            let outline_collider_type = if player.highest_selectable_level >= SelectedLevel::Level2
+            {
+                ColliderType::None
+            } else {
+                ColliderType::Rectangle
+            };
 
             spawn_block(
                 selected_level,
                 level_2_selector_transform,
                 asset_path,
-                if player.highest_selectable_level >= SelectedLevel::Level2 {
-                    outline_sprite_selectable.clone()
-                } else {
-                    outline_sprite_not_selectable.clone()
-                }
-                .clone(),
+                outline_sprite,
+                outline_collider_type,
                 commands,
                 asset_server,
             );
