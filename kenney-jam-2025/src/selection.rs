@@ -158,7 +158,11 @@ fn spawn_selection_block(
             screen_marker: OnSelectionScreen,
             add_collider: AddCollider {
                 collider_scale: 1.0,
-                collider_type: ColliderType::RegularPolygon,
+                collider_type: if outline_collider_type == ColliderType::None {
+                    ColliderType::RegularPolygon
+                } else {
+                    ColliderType::None
+                },
             },
             sprite: Sprite::from_image(asset_server.load(asset_path)),
             transform: transform.clone(),

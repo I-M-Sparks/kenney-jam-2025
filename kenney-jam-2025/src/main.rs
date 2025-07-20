@@ -1,5 +1,6 @@
 use avian2d::prelude::*;
 use bevy::{log::*, prelude::*};
+use std::ops::*;
 
 mod levels;
 use crate::levels::SelectedLevel;
@@ -30,7 +31,7 @@ fn main() -> AppExit {
         // ========= SYSTEMS
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, handle_raw_input)
-        .add_systems(PreUpdate, player_ball_speed_based_power)
+        .add_systems(PreUpdate, handle_collision_player_ball)
         .add_systems(
             Update,
             (
@@ -96,7 +97,7 @@ fn setup(
             collider_type: ColliderType::Capsule,
         },
         sprite: Sprite::from_image(asset_server.load("paddleBlu.png")),
-        transform: Transform::from_xyz(0.0, -320.0, 0.0),
+        transform: Transform::from_xyz(0.0, -300.0, 0.0).with_scale(Vec3::new(1.3, 1.0, 1.0)),
         rigid_body: RigidBody::Static,
     });
     //pre-load red paddle
@@ -159,7 +160,7 @@ fn setup(
         rigid_body: RigidBody::Static,
     });
 
-    default_restitution.coefficient = 1.075;
+    default_restitution.coefficient = 1.0;
     default_restitution.combine_rule = CoefficientCombine::Max;
 
     default_friction.dynamic_coefficient = 0.0;
@@ -278,16 +279,18 @@ fn handle_left_mouse_press_events(
             commands
                 .spawn(PlayerBallBundle {
                     marker: PlayerBall {
-                        initial_impulse: Vec2::new(0.0, 150000.0),
+                        initial_impulse: Vec2::new(0.0, 130000.0),
+                        power_level: PowerLevel::default(),
                     },
                     add_collider: AddCollider {
                         collider_scale: 1.0,
                         collider_type: ColliderType::Circle,
                     },
                     sprite: Sprite::from_image(asset_server.load("ballGrey.png")),
-                    transform: Transform::from_xyz(paddle_transform.translation.x, -300.0, 0.0),
+                    transform: Transform::from_xyz(paddle_transform.translation.x, -260.0, 0.0)
+                        .with_scale(Vec3::new(1.3, 1.3, 1.0)),
                     rigid_body: RigidBody::Dynamic,
-                    max_linear_speed: MaxLinearSpeed(3000.0),
+                    max_linear_speed: MaxLinearSpeed(2000.0),
                 })
                 .insert(PlayerBallInHold);
             debug!("PlayerBall spawned");
@@ -357,13 +360,89 @@ fn player_ball_physics_sanity_check(
     }
 }
 
-fn player_ball_speed_based_power(
+fn handle_collision_player_ball(
     // Single
-    player_ball: Single<(&mut Sprite, &LinearVelocity), With<PlayerBall>>,
+    player_ball: Single<(Entity, &mut PlayerBall, &mut Sprite, &mut LinearVelocity)>,
+    // Collisions
+    collisions: Collisions,
 ) {
-    // TODO
-    let (ball_sprite, ball_velocity) = player_ball.into_inner();
-    trace!("PlayerBall velocity {:?}", ball_velocity);
+    let (player_ball_entity, mut player_ball, mut ball_sprite, mut ball_velocity) =
+        player_ball.into_inner();
+
+    for contact_pair in collisions.iter() {
+        if contact_pair.collider1.eq(&player_ball_entity)
+            || contact_pair.collider2.eq(&player_ball_entity)
+        {
+            trace!(
+                "PlayerBall velocity at collision {:?}",
+                ball_velocity.length()
+            );
+
+            let velocity_addition_factor = 10.0;
+            let velocity_addition = ball_velocity
+                .clone()
+                .normalize()
+                .mul(velocity_addition_factor);
+
+            ball_velocity.0 = ball_velocity.0.add(velocity_addition);
+
+            trace!(
+                "PlayerBall velocity post collision {:?}",
+                ball_velocity.length()
+            );
+
+            // Change ball color based on velocity
+
+            // power levels;
+            // when the ball reaches another level, color should change
+            // white = < [500]
+            // blue = 500 - [1000]
+            // green = 1000 - [1750]
+            // yellow = 1750 - [2500]
+            // red = 2500 - 3000
+            let power_levels = [400.0, 700.0, 1000.0, 1300.0];
+
+            let ball_colors = [
+                Color::WHITE,                                      // white
+                Color::LinearRgba(LinearRgba::rgb(0.5, 0.8, 1.0)), // light blue
+                Color::LinearRgba(LinearRgba::rgb(0.0, 1.0, 0.0)), // green
+                Color::LinearRgba(LinearRgba::rgb(1.0, 1.0, 0.0)), // yellow
+                Color::LinearRgba(LinearRgba::rgb(1.0, 0.2, 0.2)), // red
+            ];
+
+            let mut power_level: usize = 0;
+            for power_level_index in 0..power_levels.len() {
+                if ball_velocity.length() < power_levels[power_level_index] {
+                    break;
+                }
+                power_level += 1;
+            }
+
+            match power_level {
+                0 => {
+                    player_ball.power_level = PowerLevel::Lowest;
+                }
+                1 => {
+                    player_ball.power_level = PowerLevel::Low;
+                }
+                2 => {
+                    player_ball.power_level = PowerLevel::Medium;
+                }
+                3 => {
+                    player_ball.power_level = PowerLevel::High;
+                }
+                4 => {
+                    player_ball.power_level = PowerLevel::Highest;
+                }
+                _ => {}
+            }
+
+            ball_sprite.color = ball_colors[power_level];
+            trace!("Setting ball color to {:?}", ball_sprite.color);
+        }
+
+        break;
+    }
 }
 
 fn add_colliders(
@@ -577,6 +656,7 @@ struct AddCollider {
 #[derive(Component)]
 struct PlayerBall {
     initial_impulse: Vec2,
+    power_level: PowerLevel,
 }
 
 /*
@@ -646,7 +726,7 @@ struct BottomColliderBundle {
 /*
  * Used to define how the AddCollider Component will be interpreted
  */
-#[derive(Default)]
+#[derive(Default, Eq, PartialEq)]
 pub enum ColliderType {
     #[default]
     None,
@@ -656,6 +736,16 @@ pub enum ColliderType {
     RegularPolygon,
     RoundedRectangle,
     Diamond,
+}
+
+#[derive(Default, Eq, PartialEq, Ord, PartialOrd)]
+pub enum PowerLevel {
+    #[default]
+    Lowest,
+    Low,
+    Medium,
+    High,
+    Highest,
 }
 
 /*
@@ -721,7 +811,7 @@ fn calculate_sprite_size(images: &Res<Assets<Image>>, sprite: &Sprite) -> Vec2 {
 }
 
 fn enforce_paddle_borders(transform: &mut Transform) {
-    const PADDLE_MAX_ABS_TRANSLATION: f32 = 535.0;
+    const PADDLE_MAX_ABS_TRANSLATION: f32 = 520.0;
 
     if f32::abs(transform.translation.x) > PADDLE_MAX_ABS_TRANSLATION {
         transform.translation.x = PADDLE_MAX_ABS_TRANSLATION

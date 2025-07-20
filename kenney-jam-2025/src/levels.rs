@@ -20,7 +20,11 @@ pub fn levels_plugin(app: &mut App) {
         // While in this state, run the `countdown` system
         .add_systems(
             Update,
-            handle_right_mouse_press_event.run_if(in_state(GameState::Levels)),
+            (
+                handle_right_mouse_press_event.run_if(in_state(GameState::Levels)),
+                handle_collision_player_ball_with_destructible_element
+                    .run_if(in_state(GameState::Levels)),
+            ),
         )
         // When exiting the state, despawn everything that was spawned for this screen
         .add_systems(OnExit(GameState::Levels), despawn_screen::<OnLevelsScreen>);
@@ -32,9 +36,6 @@ pub fn levels_plugin(app: &mut App) {
  * ================================================================================================================
  */
 
-/*
- * TODO
- */
 fn level_setup(
     // Globals
     mut commands: Commands,
@@ -54,6 +55,10 @@ fn level_setup(
             }
         }
     }
+}
+
+fn handle_collision_player_ball_with_destructible_element() {
+    // TODO
 }
 
 fn handle_right_mouse_press_event(
