@@ -4,7 +4,10 @@ use crate::level_elements::*;
 
 pub fn spawn_level(
     // Globals
-    commands: &mut Commands,
+    mut commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
 ) {
-    debug!("spawning level 1");
+    debug!("spawning level 2");
+
+    // TODO spawn level 2 layout
 }

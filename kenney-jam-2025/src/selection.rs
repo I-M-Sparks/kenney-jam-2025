@@ -223,6 +223,8 @@ fn spawn_selection_block(
                 asset_server,
             );
         }
+
+        _ => todo!(),
     }
 }
 /*

@@ -31,7 +31,9 @@ pub fn spawn_element(
         });
     } else {
         commands.spawn(DestructibleElementBundle {
-            marker: DestructibleElement,
+            marker: DestructibleElement {
+                element_durability: element_durability,
+            },
             screen_marker: OnLevelsScreen,
             sprite: Sprite::from_image(asset_server.load(asset_path)),
             transform: Transform::from_xyz(element_position.x, element_position.y, 0.0),
@@ -109,7 +111,7 @@ pub enum ElementShape {
     Pentagon,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
 pub enum ElementDurability {
     Lowest,
     Low,
@@ -120,10 +122,12 @@ pub enum ElementDurability {
 }
 
 #[derive(Component)]
-struct DestructibleElement;
+pub struct DestructibleElement {
+    pub element_durability: ElementDurability,
+}
 
 #[derive(Component)]
-struct IndestructibleElement;
+struct IndestructibleElement; // ElementDurability is implied here -> no need to store
 
 #[derive(Bundle)]
 pub struct DestructibleElementBundle {

@@ -290,7 +290,7 @@ fn handle_left_mouse_press_events(
                     transform: Transform::from_xyz(paddle_transform.translation.x, -260.0, 0.0)
                         .with_scale(Vec3::new(1.3, 1.3, 1.0)),
                     rigid_body: RigidBody::Dynamic,
-                    max_linear_speed: MaxLinearSpeed(2000.0),
+                    max_linear_speed: MaxLinearSpeed(1000.0),
                 })
                 .insert(PlayerBallInHold);
             debug!("PlayerBall spawned");
@@ -395,12 +395,12 @@ fn handle_collision_player_ball(
 
             // power levels;
             // when the ball reaches another level, color should change
-            // white = < [500]
-            // blue = 500 - [1000]
-            // green = 1000 - [1750]
-            // yellow = 1750 - [2500]
-            // red = 2500 - 3000
-            let power_levels = [400.0, 700.0, 1000.0, 1300.0];
+            // white = < [0]
+            // blue = [0]
+            // green = [1]
+            // yellow = [2]
+            // red = > [3]
+            let power_levels = [200.0, 400.0, 600.0, 800.0];
 
             let ball_colors = [
                 Color::WHITE,                                      // white
@@ -793,8 +793,8 @@ struct ElementDestroyedEvent;
  */
 
 /*
-Calculates sprite size and returns it
- */
+-* Calculates sprite size and returns it
+*/
 fn calculate_sprite_size(images: &Res<Assets<Image>>, sprite: &Sprite) -> Vec2 {
     let sprite_size = if let Some(custom_size) = sprite.custom_size {
         trace!("Using custom sprite size {}", custom_size);
