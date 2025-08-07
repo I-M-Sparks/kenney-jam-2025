@@ -148,3 +148,62 @@ pub struct IndestructibleElementBundle {
     add_collider: AddCollider,
     rigid_body: RigidBody,
 }
+
+pub fn spawn_square_block_column(
+    //Parameters
+    x_coordinate: f32,
+    y_position_bottom_block: f32,
+    vertical_offset: f32,
+    // Globals
+    mut commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+) {
+    spawn_element(
+        ElementDurability::Lowest,
+        ElementShape::Square,
+        Vec2::new(x_coordinate, y_position_bottom_block),
+        &mut commands,
+        &asset_server,
+    );
+
+    spawn_element(
+        ElementDurability::Low,
+        ElementShape::Square,
+        Vec2::new(x_coordinate, y_position_bottom_block + vertical_offset),
+        &mut commands,
+        &asset_server,
+    );
+
+    spawn_element(
+        ElementDurability::Medium,
+        ElementShape::Square,
+        Vec2::new(
+            x_coordinate,
+            y_position_bottom_block + 2.0 * vertical_offset,
+        ),
+        &mut commands,
+        &asset_server,
+    );
+
+    spawn_element(
+        ElementDurability::High,
+        ElementShape::Square,
+        Vec2::new(
+            x_coordinate,
+            y_position_bottom_block + 3.0 * vertical_offset,
+        ),
+        &mut commands,
+        &asset_server,
+    );
+
+    spawn_element(
+        ElementDurability::Highest,
+        ElementShape::Square,
+        Vec2::new(
+            x_coordinate,
+            y_position_bottom_block + 4.0 * vertical_offset,
+        ),
+        &mut commands,
+        &asset_server,
+    );
+}
