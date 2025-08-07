@@ -13,6 +13,9 @@ use crate::{Player, PowerLevel};
 
 mod level_1;
 mod level_2;
+mod level_3;
+mod level_4;
+mod level_5;
 
 /*
  * Plugin defintion
@@ -70,6 +73,18 @@ fn level_setup(
 
             SelectedLevel::Level2 => {
                 level_2::spawn_level(&mut commands, &asset_server);
+            }
+
+            SelectedLevel::Level3 => {
+                level_3::spawn_level(&mut commands, &asset_server);
+            }
+
+            SelectedLevel::Level4 => {
+                level_4::spawn_level(&mut commands, &asset_server);
+            }
+
+            SelectedLevel::Level5 => {
+                level_5::spawn_level(&mut commands, &asset_server);
             }
 
             _ => todo!(),

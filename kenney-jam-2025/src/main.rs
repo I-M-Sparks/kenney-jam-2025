@@ -86,7 +86,9 @@ fn setup(
 
     commands.spawn(PlayerBundle {
         marker: Player {
-            highest_selectable_level: SelectedLevel::Level1,
+            //highest_selectable_level: SelectedLevel::Level1,
+            //DEBUG: unlock all levels
+            highest_selectable_level: SelectedLevel::Level5,
         },
     });
 

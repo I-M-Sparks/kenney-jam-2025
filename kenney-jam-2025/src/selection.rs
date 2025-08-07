@@ -49,6 +49,9 @@ fn selection_setup(
         let player = player.into_inner();
         spawn_selection_block(&player, SelectedLevel::Level1, &mut commands, &asset_server);
         spawn_selection_block(&player, SelectedLevel::Level2, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level3, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level4, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level5, &mut commands, &asset_server);
     } else {
         trace!("No player-entity found, using mock player for setup");
         let player = Player {
@@ -56,6 +59,9 @@ fn selection_setup(
         };
         spawn_selection_block(&player, SelectedLevel::Level1, &mut commands, &asset_server);
         spawn_selection_block(&player, SelectedLevel::Level2, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level3, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level4, &mut commands, &asset_server);
+        spawn_selection_block(&player, SelectedLevel::Level5, &mut commands, &asset_server);
     }
 }
 
@@ -144,13 +150,13 @@ fn spawn_selection_block(
     let mut outline_sprite_not_selectable = Sprite::from_image(asset_server.load("selectorB.png"));
     outline_sprite_not_selectable.custom_size = Some(Vec2::new(55.0, 55.0));
 
-    let spawn_block = |selected_level,
-                       transform: Transform,
-                       asset_path,
-                       outline_sprite: Sprite,
-                       outline_collider_type: ColliderType,
-                       commands: &mut Commands,
-                       asset_server: &Res<AssetServer>| {
+    let spawn_block_closure = |selected_level,
+                               transform: Transform,
+                               asset_path,
+                               outline_sprite: Sprite,
+                               outline_collider_type: ColliderType,
+                               commands: &mut Commands,
+                               asset_server: &Res<AssetServer>| {
         commands.spawn(LevelSelectorBlockBundle {
             marker: LevelSelectorBlock {
                 selected_level: selected_level,
@@ -184,10 +190,10 @@ fn spawn_selection_block(
 
     match selected_level {
         SelectedLevel::Level1 => {
-            let level_1_selector_transform = Transform::from_xyz(-450.0, 100.0, 0.0);
+            let level_1_selector_transform = Transform::from_xyz(-400.0, 100.0, 0.0);
             let asset_path = "element_grey_polygon_glossy.png";
 
-            spawn_block(
+            spawn_block_closure(
                 selected_level,
                 level_1_selector_transform,
                 asset_path,
@@ -199,23 +205,97 @@ fn spawn_selection_block(
         }
 
         SelectedLevel::Level2 => {
-            let level_2_selector_transform = Transform::from_xyz(-300.0, 100.0, 0.0);
+            let level_2_selector_transform = Transform::from_xyz(-200.0, 100.0, 0.0);
             let asset_path = "element_blue_polygon_glossy.png";
-            let outline_sprite = if player.highest_selectable_level >= SelectedLevel::Level2 {
+            let outline_sprite = if player.highest_selectable_level >= selected_level {
                 outline_sprite_selectable.clone()
             } else {
                 outline_sprite_not_selectable.clone()
             };
-            let outline_collider_type = if player.highest_selectable_level >= SelectedLevel::Level2
-            {
+            let outline_collider_type = if player.highest_selectable_level >= selected_level {
                 ColliderType::None
             } else {
                 ColliderType::Rectangle
             };
 
-            spawn_block(
+            spawn_block_closure(
                 selected_level,
                 level_2_selector_transform,
+                asset_path,
+                outline_sprite,
+                outline_collider_type,
+                commands,
+                asset_server,
+            );
+        }
+
+        SelectedLevel::Level3 => {
+            let level_3_selector_transform = Transform::from_xyz(0.0, 100.0, 0.0);
+            let asset_path = "element_green_polygon_glossy.png";
+            let outline_sprite = if player.highest_selectable_level >= selected_level {
+                outline_sprite_selectable.clone()
+            } else {
+                outline_sprite_not_selectable.clone()
+            };
+            let outline_collider_type = if player.highest_selectable_level >= selected_level {
+                ColliderType::None
+            } else {
+                ColliderType::Rectangle
+            };
+
+            spawn_block_closure(
+                selected_level,
+                level_3_selector_transform,
+                asset_path,
+                outline_sprite,
+                outline_collider_type,
+                commands,
+                asset_server,
+            );
+        }
+
+        SelectedLevel::Level4 => {
+            let level_4_selector_transform = Transform::from_xyz(200.0, 100.0, 0.0);
+            let asset_path = "element_yellow_polygon_glossy.png";
+            let outline_sprite = if player.highest_selectable_level >= selected_level {
+                outline_sprite_selectable.clone()
+            } else {
+                outline_sprite_not_selectable.clone()
+            };
+            let outline_collider_type = if player.highest_selectable_level >= selected_level {
+                ColliderType::None
+            } else {
+                ColliderType::Rectangle
+            };
+
+            spawn_block_closure(
+                selected_level,
+                level_4_selector_transform,
+                asset_path,
+                outline_sprite,
+                outline_collider_type,
+                commands,
+                asset_server,
+            );
+        }
+
+        SelectedLevel::Level5 => {
+            let level_5_selector_transform = Transform::from_xyz(400.0, 100.0, 0.0);
+            let asset_path = "element_red_polygon_glossy.png";
+            let outline_sprite = if player.highest_selectable_level >= selected_level {
+                outline_sprite_selectable.clone()
+            } else {
+                outline_sprite_not_selectable.clone()
+            };
+            let outline_collider_type = if player.highest_selectable_level >= selected_level {
+                ColliderType::None
+            } else {
+                ColliderType::Rectangle
+            };
+
+            spawn_block_closure(
+                selected_level,
+                level_5_selector_transform,
                 asset_path,
                 outline_sprite,
                 outline_collider_type,
