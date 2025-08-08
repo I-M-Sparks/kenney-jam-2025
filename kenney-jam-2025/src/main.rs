@@ -81,6 +81,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut default_restitution: ResMut<DefaultRestitution>,
     mut default_friction: ResMut<DefaultFriction>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     commands.spawn(Camera2d);
 
@@ -166,6 +167,9 @@ fn setup(
     default_restitution.combine_rule = CoefficientCombine::Max;
 
     default_friction.dynamic_coefficient = 0.0;
+
+    trace!("Setting Game State to selection");
+    game_state.set(GameState::Selection);
 }
 
 /*
@@ -837,6 +841,7 @@ fn enforce_paddle_borders(transform: &mut Transform) {
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 enum GameState {
     #[default]
+    Startup,
     Selection,
     Levels,
 }

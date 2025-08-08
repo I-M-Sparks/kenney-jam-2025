@@ -54,6 +54,7 @@ fn selection_setup(
         spawn_selection_block(&player, SelectedLevel::Level5, &mut commands, &asset_server);
     } else {
         trace!("No player-entity found, using mock player for setup");
+
         let player = Player {
             highest_selectable_level: SelectedLevel::Level1,
         };
