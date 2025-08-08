@@ -30,95 +30,20 @@ pub fn spawn_level(
         let lower_left_pos = Vec2::new(-300.0, -66.5);
         let cross_dimensions = Vec2::new(200.0, 225.0);
 
-        // bottom row of the cross
-        spawn_element(
-            ElementDurability::Lowest,
-            ElementShape::Diamond,
-            lower_left_pos.clone(),
-            &mut commands,
-            &asset_server,
-        );
-        spawn_element(
-            ElementDurability::Lowest,
-            ElementShape::Diamond,
-            lower_left_pos
-                .clone()
-                .with_x(lower_left_pos.x + cross_dimensions.x),
+        spawn_diamond_cross(
+            lower_left_pos,
+            cross_dimensions,
             &mut commands,
             &asset_server,
         );
 
-        // center of the cross
-        spawn_element(
-            ElementDurability::Medium,
-            ElementShape::Diamond,
-            lower_left_pos.clone() + (cross_dimensions.clone() * 0.5),
-            &mut commands,
-            &asset_server,
-        );
-
-        // top row of the cross
-        spawn_element(
-            ElementDurability::High,
-            ElementShape::Diamond,
-            lower_left_pos
-                .clone()
-                .with_y(lower_left_pos.y + cross_dimensions.y),
-            &mut commands,
-            &asset_server,
-        );
-        spawn_element(
-            ElementDurability::High,
-            ElementShape::Diamond,
-            lower_left_pos.clone() + cross_dimensions.clone(),
-            &mut commands,
-            &asset_server,
-        );
-
+        // RIGHT cross
         let lower_left_pos = Vec2::new(100.0, -66.5);
         let cross_dimensions = Vec2::new(200.0, 225.0);
 
-        // bottom row of the cross
-        spawn_element(
-            ElementDurability::Lowest,
-            ElementShape::Diamond,
-            lower_left_pos.clone(),
-            &mut commands,
-            &asset_server,
-        );
-        spawn_element(
-            ElementDurability::Lowest,
-            ElementShape::Diamond,
-            lower_left_pos
-                .clone()
-                .with_x(lower_left_pos.x + cross_dimensions.x),
-            &mut commands,
-            &asset_server,
-        );
-
-        // center of the cross
-        spawn_element(
-            ElementDurability::Medium,
-            ElementShape::Diamond,
-            lower_left_pos.clone() + (cross_dimensions.clone() * 0.5),
-            &mut commands,
-            &asset_server,
-        );
-
-        // top row of the cross
-        spawn_element(
-            ElementDurability::High,
-            ElementShape::Diamond,
-            lower_left_pos
-                .clone()
-                .with_y(lower_left_pos.y + cross_dimensions.y),
-            &mut commands,
-            &asset_server,
-        );
-        spawn_element(
-            ElementDurability::High,
-            ElementShape::Diamond,
-            lower_left_pos.clone() + cross_dimensions.clone(),
+        spawn_diamond_cross(
+            lower_left_pos,
+            cross_dimensions,
             &mut commands,
             &asset_server,
         );
