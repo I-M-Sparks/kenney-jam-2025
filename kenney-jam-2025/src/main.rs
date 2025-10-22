@@ -57,7 +57,7 @@ fn main() -> AppExit {
         .add_event::<ElementDestroyedEvent>()
         .add_event::<RightMousePressEvent>()
         // ========= RESOURCE
-        .insert_resource(Gravity(Vec2::ZERO))
+        .insert_resource(Gravity(Vec2::new(0.0, -1.0)))
         // ========= GAME STATE
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
